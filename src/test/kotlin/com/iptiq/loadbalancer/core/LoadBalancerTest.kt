@@ -1,6 +1,5 @@
 package com.iptiq.loadbalancer.core
 
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -13,6 +12,19 @@ import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.seconds
 
 class LoadBalancerTest {
+
+    @Test
+    fun `given a round robin load balancer, when we remove a provider and the index belongs to this provider, it should not fail`() {
+        // setup
+        val loadBalancer = RoundRobinLoadBalancer(providersSize = 2, maxRequestsPerProvider = 5)
+
+        // act + assert
+        runBlocking {
+            loadBalancer.get()
+            loadBalancer.removeProvider(loadBalancer.providers.toList()[1].second)
+            loadBalancer.get()
+        }
+    }
 
     @Test
     fun `given a load balancer, when it is instantiated, it should have a list of 10 providers`() {
@@ -30,9 +42,9 @@ class LoadBalancerTest {
 
         runBlocking {
             // act
-            val firstResponse = loadBalancer.get()
-            val secondResponse = loadBalancer.get()
-            val thirdResponse = loadBalancer.get()
+            val firstResponse = loadBalancer.get().value
+            val secondResponse = loadBalancer.get().value
+            val thirdResponse = loadBalancer.get().value
 
             // assert
             assertNotNull(loadBalancer.providers[firstResponse])
@@ -52,9 +64,9 @@ class LoadBalancerTest {
 
         runBlocking {
             // act
-            val firstResponse = loadBalancer.get()
-            val secondResponse = loadBalancer.get()
-            val thirdResponse = loadBalancer.get()
+            val firstResponse = loadBalancer.get().value
+            val secondResponse = loadBalancer.get().value
+            val thirdResponse = loadBalancer.get().value
 
             // assert
             assertEquals(expectedFirstResponse, firstResponse)
@@ -75,10 +87,10 @@ class LoadBalancerTest {
 
         runBlocking {
             // act
-            val firstResponse = loadBalancer.get()
-            val secondResponse = loadBalancer.get()
-            val thirdResponse = loadBalancer.get()
-            val fourthResponse = loadBalancer.get()
+            val firstResponse = loadBalancer.get().value
+            val secondResponse = loadBalancer.get().value
+            val thirdResponse = loadBalancer.get().value
+            val fourthResponse = loadBalancer.get().value
 
             // assert
             assertEquals(expectedFirstResponse, firstResponse)
@@ -205,13 +217,13 @@ class LoadBalancerTest {
             runBlocking {
                 // act + assert
                 val firstJob = launch {
-                    loadBalancer.get()
+                    loadBalancer.get().value
                 }
                 val secondJob = launch {
-                    loadBalancer.get()
+                    loadBalancer.get().value
                 }
                 val thirdJob = launch {
-                    loadBalancer.get()
+                    loadBalancer.get().value
                 }
                 firstJob.join()
                 secondJob.join()

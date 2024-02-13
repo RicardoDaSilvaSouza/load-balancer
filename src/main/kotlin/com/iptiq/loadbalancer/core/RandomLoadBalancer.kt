@@ -1,5 +1,7 @@
 package com.iptiq.loadbalancer.core
 
+import com.iptiq.loadbalancer.core.model.Result
+
 class RandomLoadBalancer(
     providersSize: Int = 10,
     maxRequestsPerProvider: Int = 2,
@@ -12,8 +14,8 @@ class RandomLoadBalancer(
     heartBeatDelayInSec = heartBeatDelayInSec,
     providerType = DefaultProvider::class.java
 ) {
-    override suspend fun get(): String =
+    override suspend fun get(): Result<String> =
         handleRequest {
-            providers.toList().random().second.get()
+            Result.Success(providers.toList().random().second.get())
         }
 }

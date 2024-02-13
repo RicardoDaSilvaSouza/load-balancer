@@ -1,5 +1,7 @@
 package com.iptiq.loadbalancer.core
 
+import com.iptiq.loadbalancer.core.model.Result
+
 class RoundRobinLoadBalancer(
     providersSize: Int = 10,
     maxRequestsPerProvider: Int = 2,
@@ -13,11 +15,19 @@ class RoundRobinLoadBalancer(
     providerType = DefaultProvider::class.java
 ) {
     private var providerIndex = 0
-    override suspend fun get(): String =
+    override suspend fun get(): Result<String> =
         handleRequest {
-            providers.toList()[providerIndex].second.get().also {
+            if (providers.isEmpty()) {
+                Result.Failure(err = IllegalStateException("There is no providers"))
+            } else {
+                val providersAsList = providers.toList()
+                if (providerIndex >= providersAsList.size) providerIndex = 0
+
+                val provider = providersAsList[providerIndex].second
+                val value = provider.get()
                 providerIndex++
-                if (providerIndex >= providersSize) providerIndex = 0
+
+                Result.Success(content = value)
             }
         }
 }

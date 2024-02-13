@@ -3,6 +3,7 @@ package com.iptiq.loadbalancer.core
 import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
+import com.iptiq.loadbalancer.core.model.Result
 
 abstract class LoadBalancer<T, P : Provider<T>>(
     providerType: Class<P>,
@@ -21,7 +22,7 @@ abstract class LoadBalancer<T, P : Provider<T>>(
     private val removedProviders = mutableMapOf<String, Provider<T>>()
     private val heartBeatTable = mutableMapOf<String, Int>()
 
-    abstract suspend fun get(): T
+    abstract suspend fun get(): Result<T>
 
     fun addProvider(provider: Provider<T>) {
         if (providers.size >= providersSize)
@@ -42,10 +43,11 @@ abstract class LoadBalancer<T, P : Provider<T>>(
         }
     }
 
-    protected suspend fun handleRequest(action: suspend () -> T): T {
+    protected suspend fun handleRequest(action: suspend () -> Result<T>): Result<T> {
         val currentRequests = requests.incrementAndGet()
         val maxRequests = getMaxRequests()
-        if (currentRequests >= maxRequests) throw IllegalStateException("Reached max requests allowed: $maxRequests")
+        if (currentRequests >= maxRequests)
+            return Result.Failure(err = IllegalStateException("Reached max requests allowed: $maxRequests"))
         return action().also {
             requests.decrementAndGet()
         }
